@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from sklearn.metrics.pairwise import cosine_similarity
 import pickle
 import os
+import chromadb
+import uuid
 
 
 class VectorDB(ABC):
@@ -58,24 +60,17 @@ class VectorDB(ABC):
         pass
 
 
-
-
-import chromadb
-
 class ChromaDB(VectorDB):
     def __init__(self, kb_id: str, storage_directory: str = '~/spRAG'):
         self.kb_id = kb_id
         self.storage_directory = storage_directory
         self.load()
 
-
-
     def add_vectors(self, vectors, metadata):
         try:
             assert len(vectors) == len(metadata)
         except AssertionError:
             raise ValueError('Error in add_vectors: the number of vectors and metadata items must be the same.')
-        import uuid
 
         ids = []
         metadata_expanded = []
@@ -94,8 +89,6 @@ class ChromaDB(VectorDB):
     def search(self, query_vector, top_k=10):
 
         similarities = self.collection.query(query_embeddings=query_vector, n_results=top_k, include=['distances', 'metadatas']) 
-        #print('similarities: ', similarities)
-
         results = []
         for i in range(0, min(top_k, len(similarities['metadatas'][0]))):
             result = {
