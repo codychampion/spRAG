@@ -5,7 +5,7 @@ import time
 import json
 from sprag.auto_context import get_document_context, get_chunk_header
 from sprag.rse import get_relevance_values, get_best_segments, get_meta_document
-from sprag.vector_db import VectorDB, BasicVectorDB
+from sprag.vector_db import VectorDB, BasicVectorDB, ChromaDB
 from sprag.chunk_db import ChunkDB, BasicChunkDB
 from sprag.embedding import Embedding, OpenAIEmbedding
 from sprag.reranker import Reranker, CohereReranker
@@ -40,7 +40,7 @@ class KnowledgeBase:
         self.embedding_model = embedding_model if embedding_model else OpenAIEmbedding()
         self.reranker = reranker if reranker else CohereReranker()
         self.auto_context_model = auto_context_model if auto_context_model else AnthropicChatAPI()
-        self.vector_db = vector_db if vector_db else BasicVectorDB(self.kb_id, self.storage_directory)
+        self.vector_db = vector_db if vector_db else ChromaDB(self.kb_id, self.storage_directory)
         self.chunk_db = chunk_db if chunk_db else BasicChunkDB(self.kb_id, self.storage_directory)
         self.vector_dimension = self.embedding_model.dimension
 

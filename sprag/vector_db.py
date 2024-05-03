@@ -58,6 +58,73 @@ class VectorDB(ABC):
         pass
 
 
+
+
+import chromadb
+
+class ChromaDB(VectorDB):
+    def __init__(self, kb_id: str, storage_directory: str = '~/spRAG'):
+        self.kb_id = kb_id
+        self.storage_directory = storage_directory
+        self.load()
+
+
+
+    def add_vectors(self, vectors, metadata):
+        try:
+            assert len(vectors) == len(metadata)
+        except AssertionError:
+            raise ValueError('Error in add_vectors: the number of vectors and metadata items must be the same.')
+        import uuid
+
+        ids = []
+        metadata_expanded = []
+        for m in metadata:
+            id_tmp = str(uuid.uuid4())
+            m['db_id'] = id_tmp
+            ids.append(id_tmp)
+            metadata_expanded.append(m)
+
+        self.collection.add(
+            ids = ids,
+            embeddings=vectors,
+            metadatas=metadata,
+        )
+
+    def search(self, query_vector, top_k=10):
+
+        similarities = self.collection.query(query_embeddings=query_vector, n_results=top_k, include=['distances', 'metadatas']) 
+        #print('similarities: ', similarities)
+
+        results = []
+        for i in range(0, min(top_k, len(similarities['metadatas'][0]))):
+            result = {
+                'metadata': similarities['metadatas'][0][i],
+                'similarity': similarities['distances'][0][i],
+            }
+            results.append(result)
+
+        return results
+    
+
+    def remove_document(self, doc_id):
+        self.collection.delete(
+            where={"doc_id": doc_id}
+        )
+                
+  
+    def load(self):
+        chroma_client = chromadb.Client()
+        self.collection = chroma_client.get_or_create_collection(name=self.kb_id)
+    
+    def to_dict(self):
+        return {
+            **super().to_dict(),
+            'kb_id': self.kb_id,
+        }
+
+    
+
 class BasicVectorDB(VectorDB):
     def __init__(self, kb_id: str, storage_directory: str = '~/spRAG', use_faiss: bool = True):
         self.kb_id = kb_id
